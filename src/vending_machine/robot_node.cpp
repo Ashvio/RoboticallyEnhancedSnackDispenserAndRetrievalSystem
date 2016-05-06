@@ -1,5 +1,5 @@
 //robot node
-// Created by JG and JKC on 5.5
+// Created by JCG and JKC on 5.5
 //
 #include "ros/ros.h"
 #include "std_msgs/String.h"
@@ -27,11 +27,13 @@
 #define PI 3.14159265359
 
 ros::ServiceClient client;
-ros::Publisher publish_snack;
+ros::Publisher publishSnack;
 
 bool heard;
+final double RUN_FOR = 5.0, WAIT_TIME = 60.0, VENDING_MACHINE_POSE;
 
-bool create_new()
+//initialize something... from homework 4
+bool createNew()
 {
 	//create a new service
 	nodeName::newThing service;
@@ -50,16 +52,17 @@ bool create_new()
 		ROS_WARN("New thing failed.");
 		return false;
 	}
-	
 }
 
+//a callback function
 void callback(cost nodeName::Pose::ConstPtr& msg)
 {
 	//set variables here
 	heard = true;
 }
 
-void get_data()
+//get the data...?
+void getData()
 {
 	heard = false;
 	float framerate = 40.0;
@@ -75,18 +78,18 @@ void get_data()
 int main(int argc, char **argv) 
 {
     //initialize the node
-    ros::init(argc, argv, "vending_machine");
+    ros::init(argc, argv, "robot_node");
 
     //instantiate the node handle which is used for creating publishers and subscribers
-    ros::NodeHandle node_handle;
+    ros::NodeHandle nodeHandle;
 
-	client = node_handle.serviceClient<nodeName::::Spawn("/spawn")>;;
+	client = nodeHandle.serviceClient<nodeName::::Spawn("/spawn")>;;
 	
 	ros::service::waitForService("/spawn");
 
-	ros::Subscriber get_action = node_handle.subscribe("/object_name/pose", 1,  callback);
+	ros::Subscriber getAction = nodeHandle.subscribe("/object_name/pose", 1,  callback);
 
-	get_data();
+	getData();
 	
 	while(ros::ok())
 	{
@@ -98,6 +101,7 @@ int main(int argc, char **argv)
 	bool order = true;
 	string choiceEntry;
 
+	//make sure the order is valid
 	while (order){
 
 		cout << "Please enter if you would like a drink or a snack: "
@@ -107,14 +111,19 @@ int main(int argc, char **argv)
 		}
 	}
 
+	//save the current postion so the robot can get back here with the snack
+	Pose returnHere = currentPose;
+	
 	orderItem(choiceEntry);
 
+	moveTo(VENDING_MACHINE_POS);
+
+	moveTo(currentPose);
 
     return 0;
-
 }
 
-
+//send the raspberry pi the number of the slot associated with the requested snack item
 void orderItem(String choiceEntry)
 {
 	if(choiceEntry.equals("drink"))
@@ -127,21 +136,43 @@ void orderItem(String choiceEntry)
 	}
 	else
 	{
+		//should not have been able to get past the loop in main
 		System.out.println("How did this even happen");
 	}
 }
 
-void moveMotor()
+//raspberry pi uses GPIO or something else to run the given motor RUN_FOR times  
+//returns true if the motor was able to move, false otherwise
+bool moveMotor(int slotNumber)
 {
+	if(slotNumber == 1)
+	{
+		//send a signal to the first motor
+		//run for either RUN_FOR time or RUN_FOR rotations
+		//does the raspberry pi thing have a way to check if it actually ran? 
+	}
+	else if(slotNumber == 2)
+	{
+		//send a signal to the second motor 
+		//run for either RUN_FOR time or RUN_FOR rotations
+	}
+	else
+	{
+		//should not have gotten to this point... 
+		return false;
+	}
 	
+	return true;
 }
 
 
 
-
+void moveTo()
+{
 //from move_base_client (in move_base_client)
 //we need to always be able to go to the vending machine from current location
 //~/catkin_ws/src/bwi_common/bwi_mapper/src/libbwi_mapper/path_finder.cpp ???
+//potentially do something with a waypoint here? 
 Actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> ac("move_base",true);
   
   move_base_msgs::MoveBaseGoal goal;
@@ -172,8 +203,36 @@ Actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> ac("move_base",tru
     //block until the action is completed
     ac.waitForResult();
   }
+}
 
+//the robot gets the message from the vending machine and asks a human for help
+bool getSnack()
+{
+	double start = ros::Time::now().toSec();
+	double end = start + WAIT_TIME;
 
+	//loop for WAIT_TIME seconds or until the human says the snack has been placed
+	while(start >= end)
+	{
+		//make a noise
+		//somehow
+
+		//display message asking human for help
+		ROS_INFO("Could you place the snack safely on me?");
+		
+		cout << "If the snack has been placed, enter true: "
+                cin >> snackPlaced;
+
+		if(snackPlaced == "true" || "True" || "T" || "t")
+		{
+			return true;
+		}
+
+		start = ros::Time::now().toSec();
+	}
+
+	return false;
+}
 
 
 
