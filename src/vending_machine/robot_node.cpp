@@ -32,6 +32,10 @@ ros::Publisher publishSnack;
 bool heard;
 final double RUN_FOR = 5.0, WAIT_TIME = 60.0, VENDING_MACHINE_POSE;
 
+//service / client
+
+
+
 //initialize something... from homework 4
 bool createNew()
 {
@@ -233,11 +237,3 @@ bool getSnack()
 
 	return false;
 }
-
-
-
-
-
-
-
-
