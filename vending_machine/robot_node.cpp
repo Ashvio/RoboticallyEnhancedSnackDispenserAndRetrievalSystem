@@ -1,6 +1,6 @@
 //robot node
 // Created by JCG and JKC on 5.5
-//
+// (a code base that doesn't currently do much)
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 
@@ -26,14 +26,15 @@
 
 #define PI 3.14159265359
 
+//initialize the client and publisher
 ros::ServiceClient client;
 ros::Publisher publishSnack;
 
+//for the callback function
 bool heard;
-final double RUN_FOR = 5.0, WAIT_TIME = 60.0, VENDING_MACHINE_POSE;
 
-//service / client
-
+//constants
+final double RUN_FOR = 5.0, WAIT_TIME = 60.0;
 
 
 //initialize something... from homework 4
@@ -45,6 +46,7 @@ bool createNew()
 	//set the new thing to the passed parameters
 	service.request.variableName?
 
+	//make sure it worked
 	if(client.call(service))
 	{
 		ROS_INFO("Response: %s", service.response.n);
@@ -65,7 +67,7 @@ void callback(cost nodeName::Pose::ConstPtr& msg)
 	heard = true;
 }
 
-//get the data...?
+//get the data
 void getData()
 {
 	heard = false;

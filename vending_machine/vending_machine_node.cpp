@@ -1,9 +1,10 @@
 // vending machine node
 // Created by ashvin on 3/3/16.
-//
+// (code base that doesn't do much yet)
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 
+//taken from a homework that used turtlesim
 #include "geometry_msgs/Twist.h"
 #include <stdexcept>
 #include <cmath>
@@ -13,9 +14,6 @@
 #include "turtlesim/SetPen.h"
 
 #define PI 3.14159265359
-
-
-
 
 
 int main(int argc, char **argv) 
@@ -30,6 +28,7 @@ int main(int argc, char **argv)
 	bool order = true;
 	string choiceEntry;
 
+	//get a valid order
 	while (order){
 
 		cout << "Please enter if you would like a drink or a snack: "
@@ -39,14 +38,13 @@ int main(int argc, char **argv)
 		}
 	}
 
+	//move the motors to release the item
 	orderItem(choiceEntry);
 
-
     return 0;
-
 }
 
-
+//call the method to move the correct motor to get the given item
 void orderItem(String choiceEntry)
 {
 	if(choiceEntry.equals("drink"))
@@ -59,10 +57,12 @@ void orderItem(String choiceEntry)
 	}
 	else
 	{
+		//shouldn't get here because of the while loop in main
 		System.out.println("How did this even happen");
 	}
 }
 
+//send the signal to move the motors
 void moveMotor()
 {
 	

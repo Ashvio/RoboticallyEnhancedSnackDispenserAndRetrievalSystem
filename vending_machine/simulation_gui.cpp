@@ -1,3 +1,5 @@
+//a modified version of visit_door_list_gui, which can be found in ~/catkin_ws/src/bwi_common/bwi_tasks (on my machine, anyway...)
+//to be used with roslaunch bwi_launch simulation.launch
 /*
  * Example task intended to introduce new students
  * to the GUI and basic logical navigation
@@ -36,8 +38,10 @@ typedef actionlib::SimpleActionClient<bwi_kr_execution::ExecutePlanAction> Clien
 
 //using namespace std;
 
-//found using rviz 
+//position of the vending machine found using rviz and rostopic echo amcl_pose
 double VENDING_MACHINE_POSE[] = {16.98, 3.75, 0.0, 0.0, 0.0, -0.096, 0.99};
+
+//client needs to be initialized here so we can use it in multiple methods
 Client client("/action_executor/execute_plan", true);
 
 //uses move_base_client code to go to the preset vending machine location
@@ -75,15 +79,20 @@ void goToMachine(bwi_msgs::QuestionDialog question, ros::ServiceClient client_gu
 
   bool placed = false;
 
+  //loop until the human says the item has been placed
   while(!placed)
   {
   	question.request.message = "Please place the snack on my shelf! Has the item been placed? ";
 	
+	//these will appear as buttons the human can press to give input
         question.request.options.push_back("Yes");
         question.request.options.push_back("No");
 
+	//after 30 seconds, move on
         question.request.timeout = 30.0;
 		int current_door = 0;
+
+	//if no response, set some default response that won't mess things up
         if (client_gui.call(question))
         {
                 if (question.response.index >= 0){
@@ -99,11 +108,14 @@ void goToMachine(bwi_msgs::QuestionDialog question, ros::ServiceClient client_gu
                 ROS_ERROR("Failed to call service /question_dialog");
                 return;
         }
+
+	//if the human entered yes, exit the loop
         placed  = question.response.text == "Yes";
   }
 
 }
 
+//go to the given door
 void goToDoor(std::string location) {
 	
 	ROS_INFO_STREAM("going to " << location);
@@ -141,6 +153,7 @@ int main(int argc, char**argv) {
 
   ros::NodeHandle privateNode("~");
   
+  //vector of door strings... these can be sent to goToDoor because they are validly stored somewhere 
   std::vector<std::string> doors;
 
   doors.push_back("d3_414b1");
@@ -150,6 +163,7 @@ int main(int argc, char**argv) {
   doors.push_back("d3_418");
   int current_door = 0, snack_dest = 0;
 
+  //vector of snack choices
   std::vector<std::string> snacks;
   
   snacks.push_back("goldfish");
@@ -161,18 +175,25 @@ int main(int argc, char**argv) {
   ros::ServiceClient client_gui = n.serviceClient<bwi_msgs::QuestionDialog>("/question_dialog");
   
   while (ros::ok()) {
-	  
-	//use gui to decide which door to go to
+	
+	//set up the thing that allows questions to appear on the GUI and the responses to be recorded  
 	bwi_msgs::QuestionDialog question;
 	question.request.type = question.request.CHOICE_QUESTION;
+	
+	//loop through all the doors, go to each one and ask if someone wants a snack
 	for (int i = 0; i < doors.size(); i++) {
+		
+		//go to this door
 		std::string location = doors.at(i);
 		goToDoor(location);
-		//TODO: ask for snack instead, go to the next door in the end	
+
+		//ask for snack selection	
 		question.request.message = "Please select a snack: ";
 		for (unsigned int k = 0; k < snacks.size(); k++){
 			question.request.options.push_back(snacks.at(k));
 		}
+
+		//if no response after 30 seconds, send a default and go to the next door
 		question.request.timeout = 30.0;
 		
 		if (client_gui.call(question))
@@ -192,17 +213,12 @@ int main(int argc, char**argv) {
 		}
 
 
-	//if a snack was requested, location = vending machine
+	//if a snack was requested, go to the vending machine to get it then return to the door so we can loop again
 		if(question.response.index != question.request.NO_RESPONSE || question.response.index != question.request.TIMED_OUT)
 		{
 			goToMachine(question,  client_gui, argc, argv);
 			goToDoor(location);
 		}
-		
-		//do this
-		
-		
-
   }
 
   return 0;
